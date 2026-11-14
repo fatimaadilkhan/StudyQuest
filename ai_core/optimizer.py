@@ -1,4 +1,5 @@
 from ai_core.bandit import EpsilonGreedyBandit
+from ai_core.fruitfulness import fruitfulness_score
 
 
 class StudyOptimizer:
@@ -28,4 +29,11 @@ class StudyOptimizer:
         # Feed the reward back into the bandit
         self.bandit.update(chosen_module, reward)
 
+        return reward
+
+    def process_checkin(self, chosen_module, units_done, units_planned,
+                        focus, distractions, energy):
+        """Scores a session from check-in data and feeds it to the bandit as the reward."""
+        reward = fruitfulness_score(units_done, units_planned, focus, distractions, energy)
+        self.bandit.update(chosen_module, reward)
         return reward
