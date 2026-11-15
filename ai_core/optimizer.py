@@ -1,34 +1,23 @@
-from ai_core.bandit import EpsilonGreedyBandit
+from ai_core.thompson import ThompsonBandit
 from ai_core.fruitfulness import fruitfulness_score
 
 
 class StudyOptimizer:
-    def __init__(self, study_modules):
+    def __init__(self, study_modules, bandit=None):
         """
         :param study_modules: List of available module types (e.g., ['quiz', 'flashcard', 'summary'])
+        :param bandit: Optional bandit instance; defaults to Thompson sampling
         """
-        # Initialize our Epsilon-Greedy Bandit with the modules
-        self.bandit = EpsilonGreedyBandit(arms=study_modules)
+        self.bandit = bandit if bandit is not None else ThompsonBandit(arms=study_modules)
 
     def get_next_recommendation(self):
         """Asks the bandit algorithm to choose the next best study module."""
         return self.bandit.select_arm()
 
     def process_student_feedback(self, chosen_module, score, passing_threshold=70):
-        """
-        Processes a student's performance score, converts it into a reward (0 or 1),
-        and updates the bandit's learning model.
-
-        :param chosen_module: The module the student just completed
-        :param score: The student's score (e.g., out of 100)
-        :param passing_threshold: The score required to count as a 'success' (default 70)
-        """
-        # Convert raw score into a binary reward: 1 if passed, 0 if failed
+        """Legacy Day 1 path: converts a quiz score to a 0/1 reward."""
         reward = 1 if score >= passing_threshold else 0
-
-        # Feed the reward back into the bandit
         self.bandit.update(chosen_module, reward)
-
         return reward
 
     def process_checkin(self, chosen_module, units_done, units_planned,

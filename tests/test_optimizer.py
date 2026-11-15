@@ -1,6 +1,8 @@
 import random
 import unittest
 from collections import Counter
+from ai_core.bandit import EpsilonGreedyBandit
+from ai_core.thompson import ThompsonBandit
 
 from ai_core.optimizer import StudyOptimizer
 
@@ -50,14 +52,14 @@ class TestStudyOptimizer(unittest.TestCase):
     def test_recommendation_is_valid_arm(self):
         self.assertIn(self.opt.get_next_recommendation(), ARMS)
 
-    def test_every_arm_tried_before_exploiting(self):
+    def test_every_arm_tried_before_exploiting_epsilon_greedy(self):
+        opt = StudyOptimizer(ARMS, EpsilonGreedyBandit(ARMS))
         seen = []
         for _ in range(len(ARMS)):
-            arm = self.opt.get_next_recommendation()
+            arm = opt.get_next_recommendation()
             seen.append(arm)
-            self.opt.process_student_feedback(arm, 50)
+            opt.process_student_feedback(arm, 50)
         self.assertEqual(set(seen), set(ARMS))
-
     def test_best_arm_dominates(self):
         random.seed(0)
         pass_rate = {"quiz": 0.9, "flashcard": 0.4, "summary": 0.2}
@@ -85,6 +87,8 @@ class TestStudyOptimizer(unittest.TestCase):
         self.assertAlmostEqual(reward, 0.78)
         self.assertEqual(self.opt.bandit.counts["quiz"], 1)
         self.assertAlmostEqual(self.opt.bandit.values["quiz"], 0.78)
+    def test_default_bandit_is_thompson(self):
+        self.assertIsInstance(self.opt.bandit, ThompsonBandit)
 
 
 if __name__ == "__main__":
