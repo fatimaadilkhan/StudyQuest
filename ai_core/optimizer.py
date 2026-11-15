@@ -1,8 +1,30 @@
-from ai_core.thompson import ThompsonBandit
+from ai_core.calibration import TimeCalibrator
 from ai_core.fruitfulness import fruitfulness_score
+from ai_core.thompson import ThompsonBandit
 
 DEFAULT_TIME_SLOTS = ["morning", "afternoon", "evening", "night"]
 DEFAULT_SESSION_LENGTHS = [25, 45, 60]  # minutes
+
+# Cold-start defaults: used for a decision until it has any data.
+DEFAULT_TIME_SLOT = "morning"
+DEFAULT_LENGTH = 25  # the gentlest option
+
+
+def _start_default(arms, preferred):
+    return preferred if preferred in arms else arms[0]
+
+
+def _reason_part(label, bandit, arm, unit=""):
+    name = f"{arm}{unit}"
+    if sum(bandit.counts.values()) == 0:
+        return f"{label} {name}: starting default, no history yet"
+    n = bandit.counts[arm]
+    if n == 0:
+        return f"{label} {name}: not tried yet, worth testing"
+    wins = getattr(bandit, "wins", None)
+    if wins is None:  # e.g. the epsilon-greedy baseline doesn't track wins
+        return f"{label} {name}: tried in {n} sessions"
+    return f"{label} {name}: worked well in {wins[arm]} of {n} sessions"
 
 
 class StudyOptimizer:
@@ -18,18 +40,30 @@ class StudyOptimizer:
             arms=time_slots if time_slots is not None else DEFAULT_TIME_SLOTS)
         self.length_bandit = ThompsonBandit(
             arms=session_lengths if session_lengths is not None else DEFAULT_SESSION_LENGTHS)
+        self.calibrator = TimeCalibrator()
 
     def get_next_recommendation(self):
         """Asks the bandit algorithm to choose the next best study method."""
         return self.bandit.select_arm()
 
+    @staticmethod
+    def _pick(bandit, preferred_default):
+        """Use a sensible default until the decision has any data, then learn."""
+        if sum(bandit.counts.values()) == 0:
+            return _start_default(bandit.arms, preferred_default)
+        return bandit.select_arm()
+
     def recommend_session(self):
-        """Recommends a full session: method, time slot and length (minutes)."""
-        return {
-            "method": self.bandit.select_arm(),
-            "time_slot": self.slot_bandit.select_arm(),
-            "length": self.length_bandit.select_arm(),
-        }
+        """Recommends a full session: method, time slot, length (minutes) and a reason."""
+        method = self._pick(self.bandit, self.bandit.arms[0])
+        slot = self._pick(self.slot_bandit, DEFAULT_TIME_SLOT)
+        length = self._pick(self.length_bandit, DEFAULT_LENGTH)
+        reason = ". ".join([
+            _reason_part("Method", self.bandit, method),
+            _reason_part("Time slot", self.slot_bandit, slot),
+            _reason_part("Length", self.length_bandit, length, unit=" min"),
+        ]) + "."
+        return {"method": method, "time_slot": slot, "length": length, "reason": reason}
 
     def process_student_feedback(self, chosen_module, score, passing_threshold=70):
         """Legacy Day 1 path: converts a quiz score to a 0/1 reward."""
@@ -58,3 +92,11 @@ class StudyOptimizer:
         if session_length is not None:
             self.length_bandit.update(session_length, reward)
         return reward
+
+    def record_task_time(self, estimated_minutes, actual_minutes, category=None):
+        """Teach the calibrator how long a task really took."""
+        self.calibrator.record(estimated_minutes, actual_minutes, category)
+
+    def calibrated_estimate(self, estimate_minutes, category=None):
+        """Return the student's estimate corrected by what we've learned about them."""
+        return self.calibrator.calibrate(estimate_minutes, category)

@@ -14,7 +14,7 @@ class TestSessionOptimizer(unittest.TestCase):
     def test_recommend_session_returns_valid_choices(self):
         for _ in range(30):
             s = self.opt.recommend_session()
-            self.assertEqual(set(s), {"method", "time_slot", "length"})
+            self.assertEqual(set(s), {"method", "time_slot", "length", "reason"})
             self.assertIn(s["method"], ARMS)
             self.assertIn(s["time_slot"], self.opt.slot_bandit.arms)
             self.assertIn(s["length"], self.opt.length_bandit.arms)
