@@ -1,7 +1,10 @@
+"""Epsilon-greedy bandit, kept as a baseline to compare against Thompson sampling."""
 import random
 
 
 class EpsilonGreedyBandit:
+    """Picks the arm with the best average reward, exploring at random with probability epsilon."""
+
     def __init__(self, arms, epsilon=0.1):
         """
         :param arms: List of str/int representing study modules or resource types
@@ -40,3 +43,5 @@ class EpsilonGreedyBandit:
 
         current_value = self.values[chosen_arm]
         self.values[chosen_arm] = current_value + (reward - current_value) / n
+
+    """Picks the arm with the best average reward, exploring at random with probability epsilon."""

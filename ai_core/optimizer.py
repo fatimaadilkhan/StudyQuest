@@ -1,3 +1,4 @@
+"""StudyOptimizer: the main entry point to the AI core."""
 from ai_core.calibration import TimeCalibrator
 from ai_core.fruitfulness import fruitfulness_score
 from ai_core.thompson import ThompsonBandit
@@ -28,6 +29,7 @@ def _reason_part(label, bandit, arm, unit=""):
 
 
 class StudyOptimizer:
+    """Holds one student's learned state: method, time-slot and session-length bandits plus the time calibrator."""
     def __init__(self, study_modules, bandit=None, time_slots=None, session_lengths=None):
         """
         :param study_modules: List of available study methods (e.g., ['quiz', 'flashcard', 'summary'])

@@ -1,3 +1,4 @@
+"""Normal-Normal Thompson sampling bandit."""
 import random
 
 
@@ -20,7 +21,12 @@ class ThompsonBandit:
                  win_threshold=0.6):
         if prior_std <= 0 or obs_std <= 0:
             raise ValueError("prior_std and obs_std must be positive")
-        self.arms = list(arms)
+        arms = list(arms)
+        if not arms:
+            raise ValueError("arms must not be empty")
+        if len(set(arms)) != len(arms):
+            raise ValueError("arms must be unique")
+        self.arms = arms
         self.prior_mean = prior_mean
         self.prior_std = prior_std
         self.obs_std = obs_std
@@ -45,6 +51,7 @@ class ThompsonBandit:
         return max(samples, key=lambda name: samples[name])
 
     def update(self, chosen_arm, reward):
+        """Record a reward for an arm (raises ValueError for an unknown arm)."""
         if chosen_arm not in self.counts:
             raise ValueError(f"Unknown arm: {chosen_arm!r}. Valid arms: {self.arms}")
         self.counts[chosen_arm] += 1

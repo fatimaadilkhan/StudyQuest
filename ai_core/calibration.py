@@ -1,3 +1,4 @@
+"""Learns how long tasks really take compared with a student's estimates."""
 import math
 
 
@@ -55,3 +56,13 @@ class TimeCalibrator:
         if estimate <= 0:
             raise ValueError(f"estimate must be positive, got {estimate}")
         return estimate * self.multiplier(category)
+
+
+    def get_state(self):
+        """Return the learned data: {'overall': (count, log_sum), 'by_category': {name: (count, log_sum)}}."""
+        return {"overall": self._overall, "by_category": dict(self._by_category)}
+
+    def set_state(self, overall, by_category):
+        """Restore data returned by get_state()."""
+        self._overall = (int(overall[0]), float(overall[1]))
+        self._by_category = {c: (int(n), float(t)) for c, (n, t) in by_category.items()}
