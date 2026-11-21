@@ -16,8 +16,8 @@ try:
 except ImportError:  # plots are optional; tables and CSV curves are still written
     plt = None
 
-from evaluation import (POLICY_FACTORIES, SCENARIOS, best_arm_rate_curve,
-                        cumulative_regret_curve, evaluate, format_table, summarize)
+from ai_core.evaluation import (POLICY_FACTORIES, SCENARIOS, best_arm_rate_curve,
+                                cumulative_regret_curve, evaluate, format_table, summarize)
 from ai_core.thompson import ThompsonBandit
 
 OUTPUT_DIR = "evaluation_output"
